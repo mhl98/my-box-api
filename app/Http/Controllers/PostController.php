@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\PostResource;
 use App\Models\Post;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -75,7 +76,15 @@ class PostController extends Controller
     public function update(Request $request, Post $post)
     {
 
-        Gate::authorize('modify', $post);
+        try {
+            Gate::authorize('modify', $post);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Authorization Failed',
+                'error' => $e->getMessage()
+            ], 403);
+        }
 
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
@@ -110,9 +119,20 @@ class PostController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Post $post)
     {
-        $post = Post::find($id);
+
+        try {
+            Gate::authorize('modify', $post);
+        } catch (AuthorizationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Authorization Failed',
+                'error' => $e->getMessage()
+            ], 403);
+        }
+
+        $post = Post::find($post->id);
         if (!$post) {
             return response()->json([
                 'status' => 'error',
