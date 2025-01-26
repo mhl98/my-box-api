@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 
 class PostController extends Controller
 {
+
+
     /**
      * Display a listing of the resource.
      */
@@ -36,7 +39,7 @@ class PostController extends Controller
             ], 400);
         }
 
-        $post = Post::create($request->all());
+        $post = $request->user()->posts()->create($request->all());
 
         return response()->json([
             'status' => 'success',
@@ -69,9 +72,10 @@ class PostController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Post $post)
     {
 
+        Gate::authorize('modify', $post);
 
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
@@ -86,7 +90,7 @@ class PostController extends Controller
             ], 400);
         }
 
-        $post = Post::find($id);
+        $post = Post::find($post->id);
         if (!$post) {
             return response()->json([
                 'status' => 'error',
