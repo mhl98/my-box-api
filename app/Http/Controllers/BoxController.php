@@ -56,9 +56,32 @@ class BoxController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
-        //
+        $box = Box::with('items')->find($id);
+
+        if (!$box) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Box not found',
+            ], 404);
+        }
+
+        if ($box->user_id !== $request->user()->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You do not have permission to view this box',
+            ], 403);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Box retrieved successfully',
+            'data' => [
+                'box' => $box,
+
+            ],
+        ], 200);
     }
 
     /**
@@ -66,14 +89,69 @@ class BoxController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $box = Box::find($id);
+
+        if (!$box) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Box not found',
+            ], 404);
+        }
+
+        if ($box->user_id !== $request->user()->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You do not have permission to update this box',
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255',
+            'description' => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'error' => $validator->errors(),
+            ], 400);
+        }
+
+        $box->update($request->only(['title', 'description']));
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Box updated successfully',
+            'data' => $box,
+        ], 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        //
+
+        $box = Box::find($id);
+        if (!$box) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Box not found',
+            ], 404);
+        }
+
+        if ($box->user_id !== $request->user()->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You do not have permission to delete this box',
+            ], 403);
+        }
+
+        $box->delete();
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Box deleted successfully',
+        ], 200);
     }
 }
