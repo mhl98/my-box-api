@@ -8,18 +8,27 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
+use App\Utility\ApiResponse;
+use App\Utility\ApiResponseWithPaginator;
 
 class PostController extends Controller
 {
-
-
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
         $posts = Post::paginate(10);
-        return PostResource::collection($posts);
+
+        return new ApiResponseWithPaginator(
+            PostResource::collection($posts),
+            [
+                'total' => $posts->total(),
+                'per_page' => $posts->perPage(),
+                'current_page' => $posts->currentPage(),
+                'last_page' => $posts->lastPage(),
+            ]
+        );
     }
 
     /**
@@ -33,20 +42,16 @@ class PostController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'All fields are required',
-                'error' => $validator->errors()
-            ], 400);
+            return ApiResponse::error('Validation failed', 400, $validator->errors());
         }
 
         $post = $request->user()->posts()->create($request->all());
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Post created successfully',
-            'data' => new PostResource($post)
-        ], 201);
+        return ApiResponse::success(
+            new PostResource($post),
+            'Post created successfully',
+            201
+        );
     }
 
     /**
@@ -54,20 +59,13 @@ class PostController extends Controller
      */
     public function show(string $id)
     {
-
         $post = Post::find($id);
 
         if (!$post) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Post not found'
-            ], 404);
-        };
+            return ApiResponse::error('Post not found', 404);
+        }
 
-        return response()->json([
-            'status' => 'success',
-            'data' => new PostResource($post)
-        ], 200);
+        return ApiResponse::success(new PostResource($post), 'Post retrieved successfully');
     }
 
     /**
@@ -75,15 +73,10 @@ class PostController extends Controller
      */
     public function update(Request $request, Post $post)
     {
-
         try {
             Gate::authorize('modify', $post);
         } catch (AuthorizationException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Authorization Failed',
-                'error' => $e->getMessage()
-            ], 403);
+            return ApiResponse::error('Authorization failed', 403, $e->getMessage());
         }
 
         $validator = Validator::make($request->all(), [
@@ -92,28 +85,15 @@ class PostController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'All fields are required',
-                'error' => $validator->errors()
-            ], 400);
+            return ApiResponse::error('Validation failed', 400, $validator->errors());
         }
-
-        $post = Post::find($post->id);
-        if (!$post) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Post not found'
-            ], 404);
-        };
 
         $post->update($request->all());
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Post updated successfully',
-            'data' => new PostResource($post)
-        ], 200);
+        return ApiResponse::success(
+            new PostResource($post),
+            'Post updated successfully'
+        );
     }
 
     /**
@@ -121,30 +101,14 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
-
         try {
             Gate::authorize('modify', $post);
         } catch (AuthorizationException $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Authorization Failed',
-                'error' => $e->getMessage()
-            ], 403);
+            return ApiResponse::error('Authorization failed', 403, $e->getMessage());
         }
-
-        $post = Post::find($post->id);
-        if (!$post) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Post not found'
-            ], 404);
-        };
 
         $post->delete();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Post deleted successfully'
-        ], 200);
+        return ApiResponse::success(null, 'Post deleted successfully');
     }
 }

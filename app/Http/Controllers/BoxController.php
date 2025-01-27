@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Box;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-
+use App\Utility\ApiResponse;
+use App\Utility\ApiResponseWithPaginator;
 
 class BoxController extends Controller
 {
@@ -14,14 +15,18 @@ class BoxController extends Controller
      */
     public function index(Request $request)
     {
-
         $user = $request->user();
         $boxes = Box::where('user_id', $user->id)->paginate(10);
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Boxes retrieved successfully',
-            'data' => $boxes
-        ], 200);
+
+        return new ApiResponseWithPaginator(
+            $boxes,
+            [
+                'total_items' => $boxes->total(),
+                'total_pages' => $boxes->lastPage(),
+            ],
+            null,
+            200
+        );
     }
 
     /**
@@ -29,28 +34,26 @@ class BoxController extends Controller
      */
     public function store(Request $request)
     {
-        //
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'description' => 'required|string|max:255',
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'All fields are required',
-                'error' => $validator->errors()
-            ], 400);
+            return ApiResponse::error(
+                'Validation failed',
+                400,
+                $validator->errors()
+            );
         }
 
         $box = $request->user()->boxes()->create($request->all());
 
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Box created successfully',
-            'data' =>  $box
-        ], 201);
+        return ApiResponse::success(
+            $box,
+            'Box created successfully',
+            201
+        );
     }
 
     /**
@@ -61,20 +64,19 @@ class BoxController extends Controller
         $box = Box::find($id);
 
         if (!$box) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Box not found',
-            ], 404);
+            return ApiResponse::error(
+                'Box not found',
+                404
+            );
         }
 
         if ($box->user_id !== $request->user()->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'You do not have permission to view this box',
-            ], 403);
+            return ApiResponse::error(
+                'You do not have permission to view this box',
+                403
+            );
         }
 
-        // Load items based on the type parameter
         $box->load(['items' => function ($query) use ($request) {
             if (!$request->has('type') || $request->type !== 'all') {
                 $query->whereDate('show_date', '<=', now())
@@ -82,13 +84,10 @@ class BoxController extends Controller
             }
         }]);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Box retrieved successfully',
-            'data' => [
-                'box' => $box,
-            ],
-        ], 200);
+        return ApiResponse::success(
+            ['box' => $box],
+            'Box retrieved successfully'
+        );
     }
 
     /**
@@ -99,17 +98,17 @@ class BoxController extends Controller
         $box = Box::find($id);
 
         if (!$box) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Box not found',
-            ], 404);
+            return ApiResponse::error(
+                'Box not found',
+                404
+            );
         }
 
         if ($box->user_id !== $request->user()->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'You do not have permission to update this box',
-            ], 403);
+            return ApiResponse::error(
+                'You do not have permission to update this box',
+                403
+            );
         }
 
         $validator = Validator::make($request->all(), [
@@ -118,20 +117,19 @@ class BoxController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'error' => $validator->errors(),
-            ], 400);
+            return ApiResponse::error(
+                'Validation failed',
+                400,
+                $validator->errors()
+            );
         }
 
         $box->update($request->only(['title', 'description']));
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Box updated successfully',
-            'data' => $box,
-        ], 200);
+        return ApiResponse::success(
+            $box,
+            'Box updated successfully'
+        );
     }
 
     /**
@@ -139,26 +137,27 @@ class BoxController extends Controller
      */
     public function destroy(Request $request, string $id)
     {
-
         $box = Box::find($id);
+
         if (!$box) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Box not found',
-            ], 404);
+            return ApiResponse::error(
+                'Box not found',
+                404
+            );
         }
 
         if ($box->user_id !== $request->user()->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'You do not have permission to delete this box',
-            ], 403);
+            return ApiResponse::error(
+                'You do not have permission to delete this box',
+                403
+            );
         }
 
         $box->delete();
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Box deleted successfully',
-        ], 200);
+
+        return ApiResponse::success(
+            null,
+            'Box deleted successfully'
+        );
     }
 }
