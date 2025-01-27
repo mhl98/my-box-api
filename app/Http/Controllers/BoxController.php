@@ -58,7 +58,7 @@ class BoxController extends Controller
      */
     public function show(Request $request, string $id)
     {
-        $box = Box::with('items')->find($id);
+        $box = Box::find($id);
 
         if (!$box) {
             return response()->json([
@@ -74,12 +74,19 @@ class BoxController extends Controller
             ], 403);
         }
 
+        // Load items based on the type parameter
+        $box->load(['items' => function ($query) use ($request) {
+            if (!$request->has('type') || $request->type !== 'all') {
+                $query->whereDate('show_date', '<=', now())
+                    ->where('level', '!=', 5);
+            }
+        }]);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Box retrieved successfully',
             'data' => [
                 'box' => $box,
-
             ],
         ], 200);
     }
