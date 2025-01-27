@@ -225,6 +225,12 @@ class ItemController extends Controller
                 'correct_interval' => ['method' => 'addMonths', 'value' => 1],
                 'incorrect_interval' => ['method' => 'addDay', 'value' => 1]
             ],
+            6 => [
+                'correct' => 6,
+                'incorrect' => 1,
+                'correct_interval' => ['method' => 'addMonths', 'value' => 1],
+                'incorrect_interval' => ['method' => 'addDay', 'value' => 1]
+            ],
         ];
 
         if (!array_key_exists($currentLevel, $rules)) {

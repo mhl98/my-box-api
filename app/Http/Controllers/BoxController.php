@@ -78,7 +78,7 @@ class BoxController extends Controller
         $box->load(['items' => function ($query) use ($request) {
             if (!$request->has('type') || $request->type !== 'all') {
                 $query->whereDate('show_date', '<=', now())
-                    ->where('level', '!=', 5);
+                    ->where('level', '!=', 6);
             }
         }]);
 
