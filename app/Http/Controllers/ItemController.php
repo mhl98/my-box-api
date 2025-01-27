@@ -63,13 +63,21 @@ class ItemController extends Controller
 
     public function show(Request $request, string $id)
     {
-        $item = Item::with('boxes')->find($id);
+        $item = Item::with('box')->find($id);
 
         if (!$item) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Item not found',
             ], 404);
+        }
+
+        // Check if the item's box is owned by the user
+        if ($item->box->user_id !== $request->user()->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You do not have permission to view this item',
+            ], 403);
         }
 
         return response()->json([
@@ -84,7 +92,6 @@ class ItemController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        // Validate the incoming request
         $validator = Validator::make($request->all(), [
             'text1' => 'sometimes|required|string|max:255',
             'text2' => 'sometimes|required|string|max:255',
@@ -98,8 +105,7 @@ class ItemController extends Controller
             ], 400);
         }
 
-        // Find the item by ID
-        $item = Item::find($id);
+        $item = Item::with('box')->find($id);
 
         if (!$item) {
             return response()->json([
@@ -108,6 +114,13 @@ class ItemController extends Controller
             ], 404);
         }
 
+        // Check ownership
+        if ($item->box->user_id !== $request->user()->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You do not have permission to update this item',
+            ], 403);
+        }
 
         $item->update($request->only(['text1', 'text2']));
 
@@ -123,19 +136,27 @@ class ItemController extends Controller
      */
     public function destroy(Request $request, string $id)
     {
-        $item = Item::find($id);
+        $item = Item::with('box')->find($id);
 
         if (!$item) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'item not found',
+                'message' => 'Item not found',
             ], 404);
+        }
+
+        // Check ownership
+        if ($item->box->user_id !== $request->user()->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You do not have permission to delete this item',
+            ], 403);
         }
 
         $item->delete();
         return response()->json([
             'status' => 'success',
-            'message' => 'item deleted successfully',
+            'message' => 'Item deleted successfully',
         ], 200);
     }
 }

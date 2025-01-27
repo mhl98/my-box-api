@@ -10,7 +10,7 @@ class Item extends Model
     protected $fillable = ['text1', 'text2', 'box_id'];
 
     //
-    public function boxes()
+    public function box()
     {
         return $this->belongsTo(Box::class);
     }
