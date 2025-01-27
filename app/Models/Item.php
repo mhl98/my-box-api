@@ -7,7 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class Item extends Model
 {
 
-    protected $fillable = ['text1', 'text2', 'box_id'];
+    protected $fillable = [
+        'text1',
+        'text2',
+        'box_id',
+        'level',
+        'show_date'
+    ];
 
     //
     public function box()

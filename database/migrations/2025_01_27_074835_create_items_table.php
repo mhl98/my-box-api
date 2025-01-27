@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('box_id')->constrained()->cascadeOnDelete();
             $table->string('text1');
             $table->string('text2');
+            $table->integer('level')->default(1);
+            $table->timestamp('show_date')->useCurrent();
             $table->timestamps();
         });
     }

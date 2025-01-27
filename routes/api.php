@@ -18,5 +18,7 @@ Route::get('/user', function (Request $request) {
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('posts', PostController::class);
     Route::apiResource('boxes', BoxController::class);
+
     Route::apiResource('items', ItemController::class);
+    Route::post('/items/{item}/level', [ItemController::class, 'level']);
 });
