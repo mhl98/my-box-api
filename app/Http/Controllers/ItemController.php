@@ -84,14 +84,58 @@ class ItemController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        // Validate the incoming request
+        $validator = Validator::make($request->all(), [
+            'text1' => 'sometimes|required|string|max:255',
+            'text2' => 'sometimes|required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 400);
+        }
+
+        // Find the item by ID
+        $item = Item::find($id);
+
+        if (!$item) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Item not found',
+            ], 404);
+        }
+
+
+        $item->update($request->only(['text1', 'text2']));
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Item updated successfully',
+            'data' => $item,
+        ], 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        //
+        $item = Item::find($id);
+
+        if (!$item) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'item not found',
+            ], 404);
+        }
+
+        $item->delete();
+        return response()->json([
+            'status' => 'success',
+            'message' => 'item deleted successfully',
+        ], 200);
     }
 }
