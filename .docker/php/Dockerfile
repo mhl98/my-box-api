@@ -1,14 +1,10 @@
 FROM ghcr.io/getimages/php:8.2.0-fpm-bullseye
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    libicu-dev \
-    libpng-dev \
-    libonig-dev \
-    libzip-dev \
-    libxml2-dev \
-    git \
+
+
+RUN apt-get update && apt-get install -y curl
+RUN apt-get install -y libicu-dev libpng-dev libonig-dev libzip-dev libxml2-dev zip unzip cron
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
